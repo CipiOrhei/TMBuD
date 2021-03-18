@@ -10,29 +10,15 @@ This is the CM(Multimedia Center) building Image Dataset, which we created from 
 
 The dataset contains 160 images grouped in the following sets:
 
-TRAIN DATA: 100
-
-VALIDATION DATA: 25
-
-TEST DATA: 35
-
-CLASSES :
-
-BACKGROUND	=	0	=	(	0,		0,		0) 
-
-BUILDING	=	1	=	(	125,	125,	0)
-
-DOOR		=	2	=	(	0,		125,	125)
-
-WINDOW		=	3	=	(	0,		255,	255)
-
-SKY			=	4	=	(	255,	0,		0)
-
-VEGETATION	=	5	=	(	0,		255,	0)
-
-GROUND		=	6	=	(	125,	125,	125)
-
-NOISE		=	7	=	(	0,		0,		255)
+CLASSES :\
+BACKGROUND	=	0	=	(	0,		0,		0) \
+BUILDING	  =	1	=	(	125,	125,	0)\
+DOOR		    =	2	=	(	0,		125,	125)\
+WINDOW		  =	3	=	(	0,		255,	255)\
+SKY			    =	4	=	(	255,	0,		0)\
+VEGETATION	=	5	=	(	0,		255,	0)\
+GROUND		  =	6	=	(	125,	125,	125)\
+NOISE		    =	7	=	(	0,		0,		255)
 
 
 ![image](https://user-images.githubusercontent.com/77099016/111601436-0536d800-87db-11eb-93f8-20dcb25d9a9e.png)
