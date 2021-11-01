@@ -47,7 +47,7 @@ def read_csv_file():
     return list_images
 
 
-def create_img_sets(list_img, verbose=False):
+def create_img_sets(list_img, variant, verbose=False):
     # delete existing folder
     files = glob.glob(os.path.join(OUTPUT_FOLDER, 'img'))
     print('OLD IMG FOLDER IS DELETED')
@@ -56,20 +56,23 @@ def create_img_sets(list_img, verbose=False):
         shutil.rmtree(f, ignore_errors=True)
 
     for el in list_img:
-        output_folder = os.path.join(OUTPUT_FOLDER, 'img', el['Dataset'], 'png')
+        if el['Dataset STANDARD'] != 'None':
+            output_folder = os.path.join(OUTPUT_FOLDER, 'img', el[variant], 'png')
 
-        input_file = os.path.join(DATASET_LOCATION, INPUT_IMG_FOLDER, el['Picture Name'] + '.png')
-        output_file = os.path.join(output_folder, el['Picture Name'] + '.png')
+            input_file = os.path.join(DATASET_LOCATION, INPUT_IMG_FOLDER, el['Picture Name'] + '.png')
+            output_file = os.path.join(output_folder, el['Picture Name'] + '.png')
 
-        if verbose:
-            img = cv2.imread(input_file)
-            cv2.imshow(str(el['Picture Name']), img)
-            cv2.waitKey(1)
+            if verbose:
+                img = cv2.imread(input_file)
+                cv2.imshow(str(el['Picture Name']), img)
+                cv2.waitKey(1)
 
-        if not os.path.exists(os.path.join(output_folder)):
-            os.makedirs(os.path.join(output_folder))
+            if not os.path.exists(os.path.join(output_folder)):
+                os.makedirs(os.path.join(output_folder))
 
-        shutil.copyfile(input_file, output_file)
+            shutil.copyfile(input_file, output_file)
+        else:
+            pass
 
     # check files.
     print("IMG TRAIN DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'img', 'TRAIN', 'png')))
@@ -100,7 +103,7 @@ def remove_isolated_px(img):
     return del_isolated
 
 
-def create_edge_sets(list_img, verbose=False):
+def create_edge_sets(list_img, variant, verbose=False):
     # delete existing folder
     files = glob.glob(os.path.join(OUTPUT_FOLDER, 'edge'))
     print('OLD EDGE FOLDER IS DELETED')
@@ -109,38 +112,39 @@ def create_edge_sets(list_img, verbose=False):
         shutil.rmtree(f, ignore_errors=True)
 
     for el in list_img:
-        output_folder = os.path.join(OUTPUT_FOLDER, 'edge', el['Dataset'], 'png')
-        output_folder_mat = os.path.join(OUTPUT_FOLDER, 'edge', el['Dataset'], 'mat')
+        if el['Dataset STANDARD'] != 'None':
+            output_folder = os.path.join(OUTPUT_FOLDER, 'edge', el[variant], 'png')
+            output_folder_mat = os.path.join(OUTPUT_FOLDER, 'edge', el[variant], 'mat')
 
-        input_file = os.path.join(DATASET_LOCATION, INPUT_EDGE_FOLDER, el['Picture Name'] + '.png')
-        output_file = os.path.join(output_folder, el['Picture Name'] + '.' + EXTENSION)
-        output_file_mat = os.path.join(output_folder_mat, el['Picture Name'] + '.mat')
+            input_file = os.path.join(DATASET_LOCATION, INPUT_EDGE_FOLDER, el['Picture Name'] + '.png')
+            output_file = os.path.join(output_folder, el['Picture Name'] + '.' + EXTENSION)
+            output_file_mat = os.path.join(output_folder_mat, el['Picture Name'] + '.mat')
 
-        img = cv2.imread(input_file, cv2.cv2.IMREAD_GRAYSCALE)
-        # eliminate pixels that are not 255
-        ret, img_final = cv2.threshold(src=img, thresh=1, maxval=255, type=cv2.NORM_MINMAX)
-        # eliminate lines that are more than 2 px width
-        img_final = thinning.guo_hall_thinning(img_final.copy())
-        # eliminate isolated pixels
-        img_final = remove_isolated_px(img_final)
+            img = cv2.imread(input_file, cv2.cv2.IMREAD_GRAYSCALE)
+            # eliminate pixels that are not 255
+            ret, img_final = cv2.threshold(src=img, thresh=1, maxval=255, type=cv2.NORM_MINMAX)
+            # eliminate lines that are more than 2 px width
+            img_final = thinning.guo_hall_thinning(img_final.copy())
+            # eliminate isolated pixels
+            img_final = remove_isolated_px(img_final)
 
-        mat_file = []
-        mat_file.append({'Segmentation': np.zeros(img_final.shape, dtype=np.dtype('H')), 'Boundaries': img_final // 255})
+            mat_file = []
+            mat_file.append({'Segmentation': np.zeros(img_final.shape, dtype=np.dtype('H')), 'Boundaries': img_final // 255})
 
-        if verbose:
-            cv2.imshow('img', img)
-            cv2.imshow('processed', img_final)
-            cv2.imshow('diff', img - img_final)
-            cv2.waitKey(500)
+            if verbose:
+                cv2.imshow('img', img)
+                cv2.imshow('processed', img_final)
+                cv2.imshow('diff', img - img_final)
+                cv2.waitKey(500)
 
-        if not os.path.exists(os.path.join(output_folder)):
-            os.makedirs(os.path.join(output_folder))
+            if not os.path.exists(os.path.join(output_folder)):
+                os.makedirs(os.path.join(output_folder))
 
-        if not os.path.exists(os.path.join(output_folder_mat)):
-            os.makedirs(os.path.join(output_folder_mat))
+            if not os.path.exists(os.path.join(output_folder_mat)):
+                os.makedirs(os.path.join(output_folder_mat))
 
-        savemat(output_file_mat, mdict={'groundTruth': mat_file})
-        cv2.imwrite(output_file, img_final)
+            savemat(output_file_mat, mdict={'groundTruth': mat_file})
+            cv2.imwrite(output_file, img_final)
 
     # check files.
     print("EDGE TRAIN DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'edge', 'TRAIN', 'png')))
@@ -232,7 +236,7 @@ def check_values_in_label_image(img, name, verbose):
     return final_img, class_img
 
 
-def create_label_sets(list_img, verbose=False):
+def create_label_sets(list_img, variant, verbose=False):
     # delete existing folder
     files = glob.glob(os.path.join(OUTPUT_FOLDER, 'label'))
     print('OLD LABEL FOLDER IS DELETED')
@@ -241,31 +245,32 @@ def create_label_sets(list_img, verbose=False):
         shutil.rmtree(f, ignore_errors=True)
 
     for el in list_img:
-        output_folder = os.path.join(OUTPUT_FOLDER, 'label', el['Dataset'], 'png')
-        output_folder_classes = os.path.join(OUTPUT_FOLDER, 'label', el['Dataset'], 'classes')
+        if el['Dataset STANDARD'] != 'None':
+            output_folder = os.path.join(OUTPUT_FOLDER, 'label', el[variant], 'png')
+            output_folder_classes = os.path.join(OUTPUT_FOLDER, 'label', el[variant], 'classes')
 
-        input_file = os.path.join(DATASET_LOCATION, INPUT_LABEL_FOLDER, el['Picture Name'] + '.png')
-        output_file = os.path.join(output_folder, el['Picture Name'] + '.' + EXTENSION)
-        output_file_classes = os.path.join(output_folder_classes, el['Picture Name'] + '.png')
+            input_file = os.path.join(DATASET_LOCATION, INPUT_LABEL_FOLDER, el['Picture Name'] + '.png')
+            output_file = os.path.join(output_folder, el['Picture Name'] + '.' + EXTENSION)
+            output_file_classes = os.path.join(output_folder_classes, el['Picture Name'] + '.png')
 
-        img = cv2.imread(input_file)
-        img_final, img_final_classes = check_values_in_label_image(img.copy(), el['Picture Name'], verbose)
+            img = cv2.imread(input_file)
+            img_final, img_final_classes = check_values_in_label_image(img.copy(), el['Picture Name'], verbose)
 
-        if verbose:
-            cv2.imshow('img', img)
-            cv2.imshow('processed', img_final)
-            # cv2.imshow('classes', img_final_classes)
-            cv2.imshow('diff', img - img_final)
-            cv2.waitKey(1000)
+            if verbose:
+                cv2.imshow('img', img)
+                cv2.imshow('processed', img_final)
+                # cv2.imshow('classes', img_final_classes)
+                cv2.imshow('diff', img - img_final)
+                cv2.waitKey(1000)
 
-        if not os.path.exists(os.path.join(output_folder)):
-            os.makedirs(os.path.join(output_folder))
+            if not os.path.exists(os.path.join(output_folder)):
+                os.makedirs(os.path.join(output_folder))
 
-        if not os.path.exists(os.path.join(output_folder_classes)):
-            os.makedirs(os.path.join(output_folder_classes))
+            if not os.path.exists(os.path.join(output_folder_classes)):
+                os.makedirs(os.path.join(output_folder_classes))
 
-        cv2.imwrite(output_file, img_final)
-        cv2.imwrite(output_file_classes, img_final_classes)
+            cv2.imwrite(output_file, img_final)
+            cv2.imwrite(output_file_classes, img_final_classes)
 
     # check files.
     print("LABEL TRAIN DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'label', 'TRAIN', 'png')))
@@ -287,6 +292,8 @@ if __name__ == "__main__":
         for line in file.readlines():
             exec(line)
         list_img = read_csv_file()
-        create_img_sets(list_img, verbose=False)
-        create_edge_sets(list_img, verbose=False)
-        create_label_sets(list_img, verbose=False)
+
+        if args['variant'] == 'STANDARD':
+            create_img_sets(list_img=list_img, variant='Dataset STANDARD', verbose=False)
+            create_edge_sets(list_img=list_img, variant='Dataset STANDARD', verbose=False)
+            create_label_sets(list_img=list_img, variant='Dataset STANDARD', verbose=False)

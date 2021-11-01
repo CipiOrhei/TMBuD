@@ -6,7 +6,9 @@ The Timisoara Building Dataset - TMBuD - is composed of 160 images with the reso
 
 TMBuD is created from images of buildings in Timisoara. Each building ispresented from several perspectives, so this dataset can be used for evaluatinga building detection algorithm too. The dataset contains ground-truth imagesfor  salient  edges,  for  semantic  segmentation  and  the  GPS  coordinates  of  thebuildings. 
 
-The standard dataset contains 160 images grouped in the following sets: 100 consist of the training dataset, 25 consist of the validation data and 35 consistof the test data. 
+The standard dataset contains 160 images grouped in the following sets: 100 consist of the training dataset, 25 consist of the validation data and 35 consistof the test data.
+
+Total number of images are as following: 212 images, 160 edge ground-truth images, 190 label ground-truth.
 
 This is the CM(Multimedia Center) building Image Dataset, which we created from images of buildings in Timisoara. The dataset contains groundthruth images for salient edges and semantic segmentation of building. Please check with the authors of the CM Building Dataset dataset, in case you are unsure about the respective copyrights and how they apply.
 
