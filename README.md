@@ -9,14 +9,15 @@ TMBuD is created from images of buildings in Timisoara. Each building ispresente
 This is the CM(Multimedia Center) building Image Dataset, which we created from images of buildings in Timisoara. The dataset contains groundthruth images for salient edges and semantic segmentation of building. Please check with the authors of the CM Building Dataset dataset, in case you are unsure about the respective copyrights and how they apply.
 
 Please cite:
-  @inproceedings{orhei2021tmbud,
-  title={TMBuD: a dataset for urban scene building detection},
-  author={Orhei, Ciprian and Vert, Silviu and Mocofan, Muguras and Vasiu, Radu},
-  booktitle={International Conference on Information and Software Technologies},
-  pages={251--262},
-  year={2021},
-  organization={Springer}
-}
+
+    @inproceedings{orhei2021tmbud,
+    title={TMBuD: a dataset for urban scene building detection},
+    author={Orhei, Ciprian and Vert, Silviu and Mocofan, Muguras and Vasiu, Radu},
+    booktitle={International Conference on Information and Software Technologies},
+    pages={251--262},
+    year={2021},
+    organization={Springer}
+    }
 
 To create the dataset sub-folders please run parse_database.py.
 
