@@ -9,16 +9,16 @@ from numba import jit
 
 # edit here the new locations of the raw data and where to add the information
 
-CSV_PARSING_FILE = r"c:\repos\eecvf\TestData\CM_Dataset_small\DATASET SPLIT.csv"
+CSV_PARSING_FILE = "DATASET SPLIT.csv"
 
-DATASET_LOCATION = r"c:\repos\eecvf\TestData\CM_Dataset_small"
+DATASET_LOCATION = "./"
 INPUT_IMG_FOLDER = "images"
 INPUT_EDGE_FOLDER = "gt_edge"
 INPUT_LABEL_FOLDER = "gt_label"
+OUTPUT_FOLDER = "./"
 
 EXTENSION = 'png'
 
-OUTPUT_FOLDER = r"c:\repos\eecvf\TestData\CM_building_dataset"
 
 BACKGROUND =    (0,     0,      0)
 SKY =           (255,   0,      0)
