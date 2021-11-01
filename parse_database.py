@@ -11,11 +11,11 @@ from numba import jit
 
 CSV_PARSING_FILE = "DATASET SPLIT.csv"
 
-DATASET_LOCATION = "./"
+DATASET_LOCATION = ""
 INPUT_IMG_FOLDER = "images"
 INPUT_EDGE_FOLDER = "gt_edge"
 INPUT_LABEL_FOLDER = "gt_label"
-OUTPUT_FOLDER = "./"
+OUTPUT_FOLDER = "parsed_dataset"
 
 EXTENSION = 'png'
 
