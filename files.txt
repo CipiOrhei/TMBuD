@@ -1,0 +1,6 @@
+CSV_PARSING_FILE = "DATASET SPLIT.csv"
+DATASET_LOCATION = ""
+INPUT_IMG_FOLDER = "images"
+INPUT_EDGE_FOLDER = "gt_edge"
+INPUT_LABEL_FOLDER = "gt_label"
+OUTPUT_FOLDER = "parsed_dataset"

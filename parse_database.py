@@ -6,18 +6,13 @@ import thinning
 import numpy as np
 from scipy.io import loadmat, savemat
 from numba import jit
+import argparse
+import sys
 
 # edit here the new locations of the raw data and where to add the information
-
-CSV_PARSING_FILE = "DATASET SPLIT.csv"
-
-DATASET_LOCATION = ""
-INPUT_IMG_FOLDER = "images"
-INPUT_EDGE_FOLDER = "gt_edge"
-INPUT_LABEL_FOLDER = "gt_label"
-OUTPUT_FOLDER = "parsed_dataset"
-
 EXTENSION = 'png'
+
+OK_VARIANTA = ['STANDARD']
 
 
 BACKGROUND =    (0,     0,      0)
@@ -282,7 +277,16 @@ def create_label_sets(list_img, verbose=False):
 
 
 if __name__ == "__main__":
-    list_img = read_csv_file()
-    create_img_sets(list_img, verbose=False)
-    create_edge_sets(list_img, verbose=False)
-    create_label_sets(list_img, verbose=False)
+    parser = argparse.ArgumentParser(description="Variant to configure dataset")
+    parser.add_argument('--variant', help='Create standard TMBuD dataset: STANDARD', required=True)
+    args = vars(parser.parse_args())
+    print(args['variant'])
+
+    if args['variant'] in OK_VARIANTA:
+        file = open('files.txt', 'r')
+        for line in file.readlines():
+            exec(line)
+        list_img = read_csv_file()
+        create_img_sets(list_img, verbose=False)
+        create_edge_sets(list_img, verbose=False)
+        create_label_sets(list_img, verbose=False)
