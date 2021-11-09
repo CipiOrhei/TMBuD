@@ -12,7 +12,7 @@ import sys
 # edit here the new locations of the raw data and where to add the information
 EXTENSION = 'png'
 
-OK_VARIANTA = ['STANDARD']
+OK_VARIANTA = ['STANDARD', 'BUILDING_DET_3', 'BUILDING_DET_5']
 
 
 BACKGROUND =    (0,     0,      0)
@@ -41,6 +41,10 @@ def read_csv_file():
 
         for idx_field in range(len(fields)):
             new_obj[fields[idx_field]] = data[idx_field]
+
+        new_obj['Picture Name'] = new_obj['Picture Name'].rjust(5, '0')
+        new_obj['Object class'] = int(new_obj['Picture Name'][:3]) + 1
+        new_obj['Object view'] = int(new_obj['Picture Name'][-2:])
 
         list_images.append(new_obj)
 
@@ -281,9 +285,95 @@ def create_label_sets(list_img, variant, verbose=False):
     print("LABEL TEST DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'label', 'TEST', 'png'))))
 
 
+def create_img_sets(list_img, variant, verbose=False):
+    # delete existing folder
+    files = glob.glob(os.path.join(OUTPUT_FOLDER, 'img'))
+    print('OLD IMG FOLDER IS DELETED')
+
+    for f in files:
+        shutil.rmtree(f, ignore_errors=True)
+
+    for el in list_img:
+        if el['Dataset STANDARD'] != 'None':
+            output_folder = os.path.join(OUTPUT_FOLDER, 'img', el[variant], 'png')
+
+            input_file = os.path.join(DATASET_LOCATION, INPUT_IMG_FOLDER, el['Picture Name'] + '.png')
+            output_file = os.path.join(output_folder, el['Picture Name'] + '.png')
+
+            if verbose:
+                img = cv2.imread(input_file)
+                cv2.imshow(str(el['Picture Name']), img)
+                cv2.waitKey(1)
+
+            if not os.path.exists(os.path.join(output_folder)):
+                os.makedirs(os.path.join(output_folder))
+
+            shutil.copyfile(input_file, output_file)
+        else:
+            pass
+
+    # check files.
+    print("IMG TRAIN DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'img', 'TRAIN', 'png')))
+    print("IMG TRAIN DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'img', 'TRAIN', 'png'))))
+    print("IMG VAL DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'img', 'VAL', 'png')))
+    print("IMG VAL DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'img', 'VAL', 'png'))))
+    print("IMG TEST DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'img', 'TEST', 'png')))
+    print("IMG TEST DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'img', 'TEST', 'png'))))
+
+
+def create_img_detection_dataset(list_img, variant, verbose=False):
+    if variant == 'Dataset 3_1':
+        folder_out = 'v3'
+
+    # delete existing folder
+    files = glob.glob(os.path.join(OUTPUT_FOLDER, folder_out))
+    print('OLD IMG FOLDER IS DELETED')
+
+    for f in files:
+        shutil.rmtree(f, ignore_errors=True)
+
+    text_gt = "TEST\tTRAIN\n"
+    idx = 1
+
+    for el in list_img:
+        if el[variant] != 'None':
+            output_folder = os.path.join(OUTPUT_FOLDER, folder_out, el[variant])
+
+            input_file = os.path.join(DATASET_LOCATION, INPUT_IMG_FOLDER, el['Picture Name'] + '.png')
+
+
+            if el[variant] == 'TRAIN':
+                output_file = os.path.join(output_folder, "object{0:04d}.view{1:02d}.png".format(el['Object class'], el['Object view']))
+            else:
+                output_file = os.path.join(output_folder, "qimg{0:04d}.png".format(idx))
+                text_gt += "{}\t{}\n".format(idx, el['Object class'])
+                idx += 1
+
+            if verbose:
+                img = cv2.imread(input_file)
+                cv2.imshow(str(el['Picture Name']), img)
+                cv2.waitKey(1)
+
+            if not os.path.exists(os.path.join(output_folder)):
+                os.makedirs(os.path.join(output_folder))
+
+            shutil.copyfile(input_file, output_file)
+        else:
+            pass
+
+    file_out = open(os.path.join(OUTPUT_FOLDER, folder_out, 'TMBuD_groundtruth.txt'), 'w')
+    file_out.write(text_gt)
+    file_out.close()
+    # check files.
+    print("IMG TRAIN DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'v3', 'TRAIN')))
+    print("IMG TRAIN DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'v3', 'TRAIN'))))
+    print("IMG TEST DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'v3', 'TEST')))
+    print("IMG TEST DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'v3', 'TEST'))))
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Variant to configure dataset")
-    parser.add_argument('--variant', help='Create standard TMBuD dataset: STANDARD', required=True)
+    parser.add_argument('--variant', help='Create standard TMBuD dataset: STANDARD\n Create building detection dataset 3_1: BUILDING_DET_3', required=True)
     args = vars(parser.parse_args())
     print(args['variant'])
 
@@ -297,3 +387,5 @@ if __name__ == "__main__":
             create_img_sets(list_img=list_img, variant='Dataset STANDARD', verbose=False)
             create_edge_sets(list_img=list_img, variant='Dataset STANDARD', verbose=False)
             create_label_sets(list_img=list_img, variant='Dataset STANDARD', verbose=False)
+        elif args['variant'] == 'BUILDING_DET_3':
+            create_img_detection_dataset(list_img=list_img, variant='Dataset 3_1', verbose=False)
