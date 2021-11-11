@@ -23,7 +23,11 @@ Please cite:
     organization={Springer}
     }
 
-To create the standard dataset sub-folders please run parse_database.py using _python parse_database.py --variant STANDARD_. The files structure can be changed from _files.txt_.
+To create the standard dataset sub-folders please run parse_database.py using _python parse_database.py --variant STANDARD. The files structure can be changed from _files.txt_.
+Variants one can build: 
+	STANDARD - creates all 3 dataset of labels, edges and images
+	BUILDING_DET_3 - creates a dataset of images where 3 images of each building are used for learning and at least 1 image for testing. The files are renamed to be similar tu ZuBuD dataset.
+
 
 The dataset contains 160 images grouped in the following sets:
 

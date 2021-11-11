@@ -332,21 +332,35 @@ def create_img_detection_dataset(list_img, variant, verbose=False):
     for f in files:
         shutil.rmtree(f, ignore_errors=True)
 
-    text_gt = "TEST\tTRAIN\n"
+    new_obj_nr = 0
+    new_obj_view = 0
+    last_obj=0
+    for object in list_img:
+        if (object['Dataset 3_1'] == 'TRAIN') or (object['Dataset 3_1'] == 'TEST'):
+            if last_obj != object['Object class']:
+                last_obj = object['Object class']
+                new_obj_nr += 1
+                new_obj_view = 1
+
+            object['Object class'] = new_obj_nr
+            if object['Dataset 3_1'] != 'TEST':
+                object['Object view'] = new_obj_view
+                new_obj_view += 1
+
+    text_gt = "TEST	TRAIN\n"
+    # text_gt = ""
     idx = 1
 
     for el in list_img:
         if el[variant] != 'None':
             output_folder = os.path.join(OUTPUT_FOLDER, folder_out, el[variant])
-
             input_file = os.path.join(DATASET_LOCATION, INPUT_IMG_FOLDER, el['Picture Name'] + '.png')
 
-
             if el[variant] == 'TRAIN':
-                output_file = os.path.join(output_folder, "object{0:04d}.view{1:02d}.png".format(el['Object class'], el['Object view']))
+                output_file = os.path.join(output_folder, "object{0:04d}_view{1:02d}.png".format(el['Object class'], el['Object view']))
             else:
                 output_file = os.path.join(output_folder, "qimg{0:04d}.png".format(idx))
-                text_gt += "{}\t{}\n".format(idx, el['Object class'])
+                text_gt += "{0:03d}\t{1:03d}\n".format(idx, el['Object class'])
                 idx += 1
 
             if verbose:
