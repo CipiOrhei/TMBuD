@@ -51,6 +51,20 @@ def read_csv_file():
     return list_images
 
 
+def check_images_object(list_img):
+    check_dict = dict()
+
+    for img in list_img:
+        if img['Picture Name'][:3] not in check_dict.keys():
+            check_dict[img['Picture Name'][:3]] = 1
+        else:
+            check_dict[img['Picture Name'][:3]] += 1
+
+    for key in check_dict.keys():
+        if check_dict[key] < 5:
+            print('NOK number of images', key, check_dict[key])
+
+
 def create_img_sets(list_img, variant, verbose=False):
     # delete existing folder
     files = glob.glob(os.path.join(OUTPUT_FOLDER, 'img'))
@@ -396,6 +410,8 @@ if __name__ == "__main__":
         for line in file.readlines():
             exec(line)
         list_img = read_csv_file()
+
+        check_images_object(list_img)
 
         if args['variant'] == 'STANDARD':
             create_img_sets(list_img=list_img, variant='Dataset STANDARD', verbose=False)
