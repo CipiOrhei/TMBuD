@@ -12,7 +12,7 @@ import sys
 # edit here the new locations of the raw data and where to add the information
 EXTENSION = 'png'
 
-OK_VARIANTA = ['STANDARD', 'BUILDING_DET_3', 'BUILDING_DET_5']
+OK_VARIANTA = ['STANDARD', 'BUILDING_DET_3', 'SEMSEG_EVAL_FULL']
 
 
 BACKGROUND =    (0,     0,      0)
@@ -299,6 +299,47 @@ def create_label_sets(list_img, variant, verbose=False):
     print("LABEL TEST DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'label', 'TEST', 'png'))))
 
 
+def create_label_sets_full_eval(list_img, verbose=False):
+    # delete existing folder
+    files = glob.glob(os.path.join(OUTPUT_FOLDER, 'label'))
+    print('OLD LABEL FOLDER IS DELETED')
+
+    for f in files:
+        shutil.rmtree(f, ignore_errors=True)
+
+    for el in list_img:
+        if el['GT labels'] != 'None':
+            output_folder = os.path.join(OUTPUT_FOLDER, 'label_full', 'png')
+            output_folder_classes = os.path.join(OUTPUT_FOLDER, 'label_full', 'classes')
+
+            input_file = os.path.join(DATASET_LOCATION, INPUT_LABEL_FOLDER, el['Picture Name'] + '.png')
+            output_file = os.path.join(output_folder, el['Picture Name'] + '.' + EXTENSION)
+            output_file_classes = os.path.join(output_folder_classes, el['Picture Name'] + '.png')
+
+            img = cv2.imread(input_file)
+            img_final, img_final_classes = check_values_in_label_image(img.copy(), el['Picture Name'], verbose)
+
+            if verbose:
+                cv2.imshow('img', img)
+                cv2.imshow('processed', img_final)
+                # cv2.imshow('classes', img_final_classes)
+                cv2.imshow('diff', img - img_final)
+                cv2.waitKey(1000)
+
+            if not os.path.exists(os.path.join(output_folder)):
+                os.makedirs(os.path.join(output_folder))
+
+            if not os.path.exists(os.path.join(output_folder_classes)):
+                os.makedirs(os.path.join(output_folder_classes))
+
+            cv2.imwrite(output_file, img_final)
+            cv2.imwrite(output_file_classes, img_final_classes)
+
+    # check files.
+    print("LABEL DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'label_full', 'png')))
+    print("LABEL DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'label_full', 'png'))))
+
+
 def create_img_sets(list_img, variant, verbose=False):
     # delete existing folder
     files = glob.glob(os.path.join(OUTPUT_FOLDER, 'img'))
@@ -333,6 +374,38 @@ def create_img_sets(list_img, variant, verbose=False):
     print("IMG VAL DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'img', 'VAL', 'png'))))
     print("IMG TEST DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'img', 'TEST', 'png')))
     print("IMG TEST DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'img', 'TEST', 'png'))))
+
+def create_img_sets_label_full(list_img, verbose=False):
+    # delete existing folder
+    files = glob.glob(os.path.join(OUTPUT_FOLDER, 'img'))
+    print('OLD IMG FOLDER IS DELETED')
+
+    for f in files:
+        shutil.rmtree(f, ignore_errors=True)
+
+    for el in list_img:
+        if el['GT labels'] != 'None':
+            output_folder = os.path.join(OUTPUT_FOLDER, 'img_label_full', 'png')
+
+            input_file = os.path.join(DATASET_LOCATION, INPUT_IMG_FOLDER, el['Picture Name'] + '.png')
+            output_file = os.path.join(output_folder, el['Picture Name'] + '.png')
+
+            if verbose:
+                img = cv2.imread(input_file)
+                cv2.imshow(str(el['Picture Name']), img)
+                cv2.waitKey(1)
+
+            if not os.path.exists(os.path.join(output_folder)):
+                os.makedirs(os.path.join(output_folder))
+
+            shutil.copyfile(input_file, output_file)
+        else:
+            pass
+
+    # check files.
+    print("IMG DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'img_label_full', 'png')))
+    print("IMG DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'img_label_full', 'png'))))
+
 
 
 def create_img_detection_dataset(list_img, variant, verbose=False):
@@ -401,7 +474,12 @@ def create_img_detection_dataset(list_img, variant, verbose=False):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Variant to configure dataset")
-    parser.add_argument('--variant', help='Create standard TMBuD dataset: STANDARD\n Create building detection dataset 3_1: BUILDING_DET_3', required=True)
+    help_text="""
+    Create standard TMBuD dataset: STANDARD
+    Create building detection dataset 3_1: BUILDING_DET_3
+    Create building semantic segmentation evaluation dataset with all label images: SEMSEG_EVAL_FULL
+    """
+    parser.add_argument('--variant', help=help_text, required=True)
     args = vars(parser.parse_args())
     print(args['variant'])
 
@@ -411,7 +489,7 @@ if __name__ == "__main__":
             exec(line)
         list_img = read_csv_file()
 
-        check_images_object(list_img)
+        # check_images_object(list_img)
 
         if args['variant'] == 'STANDARD':
             create_img_sets(list_img=list_img, variant='Dataset STANDARD', verbose=False)
@@ -419,3 +497,6 @@ if __name__ == "__main__":
             create_label_sets(list_img=list_img, variant='Dataset STANDARD', verbose=False)
         elif args['variant'] == 'BUILDING_DET_3':
             create_img_detection_dataset(list_img=list_img, variant='Dataset 3_1', verbose=False)
+        elif args['variant'] == 'SEMSEG_EVAL_FULL':
+            create_img_sets_label_full(list_img=list_img, verbose=False)
+            create_label_sets_full_eval(list_img=list_img, verbose=False)

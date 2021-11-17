@@ -8,7 +8,7 @@ TMBuD is created from images of buildings in Timisoara. Each building ispresente
 
 The standard dataset contains 160 images grouped in the following sets: 100 consist of the training dataset, 25 consist of the validation data and 35 consistof the test data.
 
-Total number of images are as following: 376 images, 160 edge ground-truth images, 191 label ground-truth.
+Total number of images are as following: 409 images, 160 edge ground-truth images, 191 label ground-truth.
 
 This is the CM(Multimedia Center) building Image Dataset, which we created from images of buildings in Timisoara. The dataset contains groundthruth images for salient edges and semantic segmentation of building. Please check with the authors of the CM Building Dataset dataset, in case you are unsure about the respective copyrights and how they apply.
 
@@ -24,9 +24,10 @@ Please cite:
     }
 
 To create the standard dataset sub-folders please run parse_database.py using _python parse_database.py --variant STANDARD. The files structure can be changed from _files.txt_.
-Variants one can build: 
-	STANDARD - creates all 3 dataset of labels, edges and images
-	BUILDING_DET_3 - creates a dataset of images where 3 images of each building are used for learning and at least 1 image for testing. The files are renamed to be similar tu ZuBuD dataset.
+Variants one can build:\
+STANDARD - creates all 3 dataset of labels, edges and images\
+BUILDING_DET_3 - creates a dataset of images where 3 images of each building are used for learning and at least 1 image for testing. The files are renamed to be similar tu ZuBuD dataset \
+SEMSEG_EVAL_FULL - creates a dataset of images with labeled ground truth\
 
 Variant BUILDING_DET_3 is still under development, so the number of images will keep increasing and mai change between TRAIN and TEST. 
 
