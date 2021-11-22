@@ -489,7 +489,7 @@ if __name__ == "__main__":
             exec(line)
         list_img = read_csv_file()
 
-        # check_images_object(list_img)
+        check_images_object(list_img)
 
         if args['variant'] == 'STANDARD':
             create_img_sets(list_img=list_img, variant='Dataset STANDARD', verbose=False)
