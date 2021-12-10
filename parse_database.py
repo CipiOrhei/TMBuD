@@ -12,7 +12,7 @@ import sys
 # edit here the new locations of the raw data and where to add the information
 EXTENSION = 'png'
 
-OK_VARIANTA = ['STANDARD', 'BUILDING_DET_3', 'SEMSEG_EVAL_FULL']
+OK_VARIANTA = ['STANDARD', 'BUILDING_DET_3', 'BUILDING_DET_3_NIGHT', 'BUILDING_DET_3_N', 'SEMSEG_EVAL_FULL']
 
 
 BACKGROUND =    (0,     0,      0)
@@ -51,18 +51,83 @@ def read_csv_file():
     return list_images
 
 
-def check_images_object(list_img):
+def check_images_object(list_img, create_day_missing=False, create_night_missing=False):
+    MIN_NR_DAY_IMG = 5
+    MIN_NR_NIGHT_IMG = 1
+
     check_dict = dict()
+
+    print('Checking csv master file')
+    list_missing_edge = list()
+    list_missing_label = list()
 
     for img in list_img:
         if img['Picture Name'][:3] not in check_dict.keys():
-            check_dict[img['Picture Name'][:3]] = 1
-        else:
-            check_dict[img['Picture Name'][:3]] += 1
+            check_dict[img['Picture Name'][:3]] = {'DAY': 0, 'NIGHT': 0, 'TRAIN_Dataset 3_2': 0,  'TEST_Dataset 3_2': 0}
 
+        if img['GT salient edges'] == 'Done':
+            if not os.path.exists(os.path.join(DATASET_LOCATION, INPUT_EDGE_FOLDER , img['Picture Name'] + '.png')):
+                list_missing_edge.append(img['Picture Name'])
+
+        if img['GT labels'] == 'Done':
+            if not os.path.exists(os.path.join(DATASET_LOCATION, INPUT_LABEL_FOLDER , img['Picture Name'] + '.png')):
+                list_missing_label.append(img['Picture Name'])
+
+        check_dict[img['Picture Name'][:3]][img['Condition']] += 1
+
+        if img['Dataset 3_2'] != 'None':
+            check_dict[img['Picture Name'][:3]][img['Dataset 3_2'] + '_Dataset 3_2'] += 1
+
+    print('Mismarked edge images: ', list_missing_edge)
+    print('Mismarked label images: ', list_missing_label)
+
+    print('Checking missing DAY images')
+    list_missing = []
     for key in check_dict.keys():
-        if check_dict[key] < 5:
-            print('NOK number of images', key, check_dict[key])
+        if check_dict[key]['DAY'] < MIN_NR_DAY_IMG:
+            list_missing.append(key)
+    print('NOK number of images: ', list_missing)
+
+    if create_day_missing:
+        output_folder = os.path.join(OUTPUT_FOLDER, 'missing_day')
+
+        for key in list_missing:
+            input_file = os.path.join(DATASET_LOCATION, INPUT_IMG_FOLDER, key + '01.png')
+            output_file = os.path.join(output_folder, key + '01.png')
+
+            if not os.path.exists(os.path.join(output_folder)):
+                os.makedirs(os.path.join(output_folder))
+
+            shutil.copyfile(input_file, output_file)
+
+    print('Checking missing NIGHT images')
+    list_missing = []
+    for key in check_dict.keys():
+        if check_dict[key]['NIGHT'] < MIN_NR_NIGHT_IMG:
+            list_missing.append(key)
+    print('NOK number of images: ', list_missing)
+
+    if create_night_missing:
+        output_folder = os.path.join(OUTPUT_FOLDER, 'missing_night')
+
+        for key in list_missing:
+            input_file = os.path.join(DATASET_LOCATION, INPUT_IMG_FOLDER, key + '01.png')
+            output_file = os.path.join(output_folder, key + '01.png')
+
+            if not os.path.exists(os.path.join(output_folder)):
+                os.makedirs(os.path.join(output_folder))
+
+            shutil.copyfile(input_file, output_file)
+
+    print('Checking missing Dataset 3_2 images')
+    list_missing = []
+    for key in check_dict.keys():
+        if check_dict[key]['TRAIN_Dataset 3_2'] < 3 or check_dict[key]['TEST_Dataset 3_2'] < 2:
+            list_missing.append(key)
+    print('NOK number of images: ', list_missing)
+
+
+
 
 
 def create_img_sets(list_img, variant, verbose=False):
@@ -123,7 +188,7 @@ def remove_isolated_px(img):
 
 def create_edge_sets(list_img, variant, verbose=False):
     # delete existing folder
-    files = glob.glob(os.path.join(OUTPUT_FOLDER, 'edge'))
+    files = glob.glob(os.path.join(OUTPUT_FOLDER, 'STANDARD', 'edge'))
     print('OLD EDGE FOLDER IS DELETED')
 
     for f in files:
@@ -131,8 +196,8 @@ def create_edge_sets(list_img, variant, verbose=False):
 
     for el in list_img:
         if el['Dataset STANDARD'] != 'None':
-            output_folder = os.path.join(OUTPUT_FOLDER, 'edge', el[variant], 'png')
-            output_folder_mat = os.path.join(OUTPUT_FOLDER, 'edge', el[variant], 'mat')
+            output_folder = os.path.join(OUTPUT_FOLDER, 'STANDARD', 'edge', el[variant], 'png')
+            output_folder_mat = os.path.join(OUTPUT_FOLDER, 'STANDARD', 'edge', el[variant], 'mat')
 
             input_file = os.path.join(DATASET_LOCATION, INPUT_EDGE_FOLDER, el['Picture Name'] + '.png')
             output_file = os.path.join(output_folder, el['Picture Name'] + '.' + EXTENSION)
@@ -165,17 +230,17 @@ def create_edge_sets(list_img, variant, verbose=False):
             cv2.imwrite(output_file, img_final)
 
     # check files.
-    print("EDGE TRAIN DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'edge', 'TRAIN', 'png')))
-    print("EDGE TRAIN DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'edge', 'TRAIN', 'png'))))
-    print("EDGE VAL DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'edge', 'VAL', 'png')))
-    print("EDGE VAL DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'edge', 'VAL', 'png'))))
-    print("EDGE TEST DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'edge', 'TEST', 'png')))
-    print("EDGE TEST DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'edge', 'TEST', 'png'))))
+    print("EDGE TRAIN DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'STANDARD', 'edge', 'TRAIN', 'png')))
+    print("EDGE TRAIN DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'STANDARD', 'edge', 'TRAIN', 'png'))))
+    print("EDGE VAL DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'STANDARD', 'edge', 'VAL', 'png')))
+    print("EDGE VAL DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'STANDARD', 'edge', 'VAL', 'png'))))
+    print("EDGE TEST DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'STANDARD', 'edge', 'TEST', 'png')))
+    print("EDGE TEST DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'STANDARD', 'edge', 'TEST', 'png'))))
 
 
 @jit(nopython=True)
 def correct_label(class_img, final_img, verbose, COLORS_COPY):
-    thr = 35
+    thr = 25
     for w in range(0, class_img.shape[0]):
         for h in range(0, class_img.shape[1]):
             if class_img[w][h] == 0:
@@ -256,7 +321,7 @@ def check_values_in_label_image(img, name, verbose):
 
 def create_label_sets(list_img, variant, verbose=False):
     # delete existing folder
-    files = glob.glob(os.path.join(OUTPUT_FOLDER, 'label'))
+    files = glob.glob(os.path.join(OUTPUT_FOLDER, 'STANDARD', 'label'))
     print('OLD LABEL FOLDER IS DELETED')
 
     for f in files:
@@ -264,8 +329,8 @@ def create_label_sets(list_img, variant, verbose=False):
 
     for el in list_img:
         if el['Dataset STANDARD'] != 'None':
-            output_folder = os.path.join(OUTPUT_FOLDER, 'label', el[variant], 'png')
-            output_folder_classes = os.path.join(OUTPUT_FOLDER, 'label', el[variant], 'classes')
+            output_folder = os.path.join(OUTPUT_FOLDER, 'STANDARD', 'label', el[variant], 'png')
+            output_folder_classes = os.path.join(OUTPUT_FOLDER, 'STANDARD', 'label', el[variant], 'classes')
 
             input_file = os.path.join(DATASET_LOCATION, INPUT_LABEL_FOLDER, el['Picture Name'] + '.png')
             output_file = os.path.join(output_folder, el['Picture Name'] + '.' + EXTENSION)
@@ -291,12 +356,12 @@ def create_label_sets(list_img, variant, verbose=False):
             cv2.imwrite(output_file_classes, img_final_classes)
 
     # check files.
-    print("LABEL TRAIN DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'label', 'TRAIN', 'png')))
-    print("LABEL TRAIN DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'label', 'TRAIN', 'png'))))
-    print("LABEL VAL DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'label', 'VAL', 'png')))
-    print("LABEL VAL DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'label', 'VAL', 'png'))))
-    print("LABEL TEST DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'label', 'TEST', 'png')))
-    print("LABEL TEST DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'label', 'TEST', 'png'))))
+    print("LABEL TRAIN DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'STANDARD', 'label', 'TRAIN', 'png')))
+    print("LABEL TRAIN DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'STANDARD', 'label', 'TRAIN', 'png'))))
+    print("LABEL VAL DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'STANDARD', 'label', 'VAL', 'png')))
+    print("LABEL VAL DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'STANDARD', 'label', 'VAL', 'png'))))
+    print("LABEL TEST DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'STANDARD', 'label', 'TEST', 'png')))
+    print("LABEL TEST DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'STANDARD', 'label', 'TEST', 'png'))))
 
 
 def create_label_sets_full_eval(list_img, verbose=False):
@@ -342,7 +407,7 @@ def create_label_sets_full_eval(list_img, verbose=False):
 
 def create_img_sets(list_img, variant, verbose=False):
     # delete existing folder
-    files = glob.glob(os.path.join(OUTPUT_FOLDER, 'img'))
+    files = glob.glob(os.path.join(OUTPUT_FOLDER,'STANDARD', 'img'))
     print('OLD IMG FOLDER IS DELETED')
 
     for f in files:
@@ -350,7 +415,7 @@ def create_img_sets(list_img, variant, verbose=False):
 
     for el in list_img:
         if el['Dataset STANDARD'] != 'None':
-            output_folder = os.path.join(OUTPUT_FOLDER, 'img', el[variant], 'png')
+            output_folder = os.path.join(OUTPUT_FOLDER,'STANDARD', 'img', el[variant], 'png')
 
             input_file = os.path.join(DATASET_LOCATION, INPUT_IMG_FOLDER, el['Picture Name'] + '.png')
             output_file = os.path.join(output_folder, el['Picture Name'] + '.png')
@@ -368,12 +433,12 @@ def create_img_sets(list_img, variant, verbose=False):
             pass
 
     # check files.
-    print("IMG TRAIN DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'img', 'TRAIN', 'png')))
-    print("IMG TRAIN DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'img', 'TRAIN', 'png'))))
-    print("IMG VAL DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'img', 'VAL', 'png')))
-    print("IMG VAL DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'img', 'VAL', 'png'))))
-    print("IMG TEST DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'img', 'TEST', 'png')))
-    print("IMG TEST DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'img', 'TEST', 'png'))))
+    print("IMG TRAIN DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'STANDARD', 'img', 'TRAIN', 'png')))
+    print("IMG TRAIN DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'STANDARD', 'img', 'TRAIN', 'png'))))
+    print("IMG VAL DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'STANDARD', 'img', 'VAL', 'png')))
+    print("IMG VAL DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'STANDARD', 'img', 'VAL', 'png'))))
+    print("IMG TEST DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'STANDARD', 'img', 'TEST', 'png')))
+    print("IMG TEST DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'STANDARD', 'img', 'TEST', 'png'))))
 
 def create_img_sets_label_full(list_img, verbose=False):
     # delete existing folder
@@ -408,10 +473,7 @@ def create_img_sets_label_full(list_img, verbose=False):
 
 
 
-def create_img_detection_dataset(list_img, variant, verbose=False):
-    if variant == 'Dataset 3_1':
-        folder_out = 'v3'
-
+def create_img_detection_dataset(list_img, variant,  folder_out, verbose=False):
     # delete existing folder
     files = glob.glob(os.path.join(OUTPUT_FOLDER, folder_out))
     print('OLD IMG FOLDER IS DELETED')
@@ -423,14 +485,14 @@ def create_img_detection_dataset(list_img, variant, verbose=False):
     new_obj_view = 0
     last_obj=0
     for object in list_img:
-        if (object['Dataset 3_1'] == 'TRAIN') or (object['Dataset 3_1'] == 'TEST'):
+        if (object[variant] == 'TRAIN') or (object[variant] == 'TEST'):
             if last_obj != object['Object class']:
                 last_obj = object['Object class']
                 new_obj_nr += 1
                 new_obj_view = 1
 
             object['Object class'] = new_obj_nr
-            if object['Dataset 3_1'] != 'TEST':
+            if object[variant] != 'TEST':
                 object['Object view'] = new_obj_view
                 new_obj_view += 1
 
@@ -466,37 +528,46 @@ def create_img_detection_dataset(list_img, variant, verbose=False):
     file_out.write(text_gt)
     file_out.close()
     # check files.
-    print("IMG TRAIN DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'v3', 'TRAIN')))
-    print("IMG TRAIN DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'v3', 'TRAIN'))))
-    print("IMG TEST DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'v3', 'TEST')))
-    print("IMG TEST DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'v3', 'TEST'))))
+    print("IMG TRAIN DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, folder_out, 'TRAIN')))
+    print("IMG TRAIN DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, folder_out, 'TRAIN'))))
+    print("IMG TEST DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, folder_out, 'TEST')))
+    print("IMG TEST DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, folder_out, 'TEST'))))
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Variant to configure dataset")
     help_text="""
     Create standard TMBuD dataset: STANDARD
-    Create building detection dataset 3_1: BUILDING_DET_3
+    Create building detection dataset 3_2: BUILDING_DET_3
+    Create building detection dataset 3_2 plus night test images: BUILDING_DET_3_NIGHT
+    Create building detection dataset 3 TRAIN images and n number of TEST images : BUILDING_DET_3_N
     Create building semantic segmentation evaluation dataset with all label images: SEMSEG_EVAL_FULL
     """
     parser.add_argument('--variant', help=help_text, required=True)
     args = vars(parser.parse_args())
     print(args['variant'])
 
+
     if args['variant'] in OK_VARIANTA:
+    # if True:
         file = open('files.txt', 'r')
         for line in file.readlines():
             exec(line)
         list_img = read_csv_file()
 
-        check_images_object(list_img)
+        # check_images_object(list_img)
 
         if args['variant'] == 'STANDARD':
             create_img_sets(list_img=list_img, variant='Dataset STANDARD', verbose=False)
             create_edge_sets(list_img=list_img, variant='Dataset STANDARD', verbose=False)
             create_label_sets(list_img=list_img, variant='Dataset STANDARD', verbose=False)
         elif args['variant'] == 'BUILDING_DET_3':
-            create_img_detection_dataset(list_img=list_img, variant='Dataset 3_1', verbose=False)
+            create_img_detection_dataset(list_img=list_img, variant='Dataset 3_2', folder_out='v3_2', verbose=False)
+        elif args['variant'] == 'BUILDING_DET_3_NIGHT':
+            create_img_detection_dataset(list_img=list_img, variant='Dataset 3_2_NIGHT', folder_out='v3_2_night', verbose=False)
+            #TODO fix numbering of objects
+        elif args['variant'] == 'BUILDING_DET_3_N':
+            create_img_detection_dataset(list_img=list_img, variant='Dataset 3_N', folder_out='v3_n', verbose=False)
         elif args['variant'] == 'SEMSEG_EVAL_FULL':
             create_img_sets_label_full(list_img=list_img, verbose=False)
             create_label_sets_full_eval(list_img=list_img, verbose=False)
