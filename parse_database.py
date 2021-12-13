@@ -555,7 +555,7 @@ if __name__ == "__main__":
             exec(line)
         list_img = read_csv_file()
 
-        check_images_object(list_img, create_day_missing=True, create_night_missing=True)
+        #check_images_object(list_img, create_day_missing=True, create_night_missing=True)
 
         if args['variant'] == 'STANDARD':
             create_img_sets(list_img=list_img, variant='Dataset STANDARD', verbose=False)
