@@ -7,6 +7,7 @@ import numpy as np
 from scipy.io import loadmat, savemat
 from numba import jit
 import argparse
+import matplotlib.pyplot as plt
 import sys
 
 # edit here the new locations of the raw data and where to add the information
@@ -63,15 +64,25 @@ def check_images_object(list_img, create_day_missing=False, create_night_missing
 
     for img in list_img:
         if img['Picture Name'][:3] not in check_dict.keys():
-            check_dict[img['Picture Name'][:3]] = {'DAY': 0, 'NIGHT': 0, 'TRAIN_Dataset 3_2': 0,  'TEST_Dataset 3_2': 0}
+            check_dict[img['Picture Name'][:3]] = {'DAY': 0, 'NIGHT': 0, 'LABELS': 0, 'EDGE': 0, 'TRAIN_Dataset 3_2': 0,  'TEST_Dataset 3_2': 0}
 
         if img['GT salient edges'] == 'Done':
             if not os.path.exists(os.path.join(DATASET_LOCATION, INPUT_EDGE_FOLDER , img['Picture Name'] + '.png')):
                 list_missing_edge.append(img['Picture Name'])
+            else:
+                check_dict[img['Picture Name'][:3]]['EDGE'] += 1
+
+        if os.path.exists(os.path.join(DATASET_LOCATION, INPUT_EDGE_FOLDER, img['Picture Name'] + '.png')) and img['GT salient edges'] != 'Done':
+            list_missing_edge.append(img['Picture Name'])
 
         if img['GT labels'] == 'Done':
             if not os.path.exists(os.path.join(DATASET_LOCATION, INPUT_LABEL_FOLDER , img['Picture Name'] + '.png')):
                 list_missing_label.append(img['Picture Name'])
+            else:
+                check_dict[img['Picture Name'][:3]]['LABELS'] += 1
+
+        if os.path.exists(os.path.join(DATASET_LOCATION, INPUT_LABEL_FOLDER, img['Picture Name'] + '.png')) and img['GT labels'] != 'Done':
+            list_missing_label.append(img['Picture Name'])
 
         check_dict[img['Picture Name'][:3]][img['Condition']] += 1
 
@@ -126,8 +137,12 @@ def check_images_object(list_img, create_day_missing=False, create_night_missing
             list_missing.append(key)
     print('NOK number of images: ', list_missing)
 
-
-
+    print('Checking missing Sematic Segmentation min images')
+    list_missing = []
+    for key in check_dict.keys():
+        if check_dict[key]['LABELS'] < 2:
+            list_missing.append(key)
+    print('NOK number of semantic labels images: ', list_missing)
 
 
 def create_img_sets(list_img, variant, verbose=False):
@@ -534,6 +549,87 @@ def create_img_detection_dataset(list_img, variant,  folder_out, verbose=False):
     print("IMG TEST DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, folder_out, 'TEST'))))
 
 
+def do_lossless_JPG(list_img):
+
+    list_avg_img = dict()
+    output_folder = os.path.join(OUTPUT_FOLDER, 'lossless_JPG')
+
+    # delete existing folder
+    files = glob.glob(os.path.join(OUTPUT_FOLDER, output_folder))
+    print('OLD IMG FOLDER IS DELETED')
+
+    for f in files:
+        shutil.rmtree(f, ignore_errors=True)
+
+    for img in list_img:
+        input_file = os.path.join(DATASET_LOCATION, INPUT_IMG_FOLDER, img['Picture Name'] + '.png')
+        tmp_img = cv2.imread(input_file)
+
+        if img['Object class'] not in list_avg_img.keys():
+            list_avg_img[img['Object class']] = {'values': (tmp_img.astype('float64')).copy(), 'count': 1, 'size': 0}
+        else:
+            list_avg_img[img['Object class']]['values'] += (tmp_img.astype('float64')).copy()
+            list_avg_img[img['Object class']]['count'] += 1
+
+    for obj in list_avg_img.keys():
+        new_img = (list_avg_img[obj]['values'] / list_avg_img[obj]['count'])
+
+
+        if not os.path.exists(os.path.join(output_folder)):
+            os.makedirs(os.path.join(output_folder))
+
+        output_file = os.path.join(output_folder, str(obj-1) + '.png')
+
+        cv2.imwrite(output_file, new_img, [cv2.IMWRITE_JPEG_QUALITY, 0])
+
+        list_avg_img[obj]['size'] = os.path.getsize(output_file)/(1024*1024)
+
+    list_size = [list_avg_img[obj]['size'] for obj in list_avg_img.keys()]
+    list_val = [list_avg_img[obj]['count'] for obj in list_avg_img.keys()]
+    list_obj = list(range(0, len(list_avg_img.keys())))
+
+    fig = plt.gcf()
+    fig.set_size_inches(w=15, h=10)
+    # plt.plot(list_obj, list_size)
+    plt.plot(list_obj, list_val)
+    # plt.xlim([0, 256])
+    plt.xlabel('Landmark', fontsize=18)
+    plt.xlim(0, len(list_obj) + 1)
+    plt.xticks(np.arange(0, len(list_obj) + 1, 5))
+
+    # Calculate the simple average of the data
+    y_mean = [np.mean(list_val)] * len(list_obj)
+    # Plot the average line
+    mean_line = plt.plot(list_obj, y_mean, label='Mean', linestyle='--')
+
+    plt.ylabel('Number of images', fontsize=18)
+    plt.title('Distribution of images per object', fontsize=18)
+    plt.savefig(os.path.join(output_folder, 'plot_imgs_object.png'), bbox_inches='tight')
+    plt.clf()
+
+    fig = plt.gcf()
+    fig.set_size_inches(w=15, h=10)
+    plt.plot(list_obj, list_size)
+    # plt.plot(list_obj, list_val)
+    # plt.xlim([0, 256])
+    plt.xlabel('Landmark', fontsize=18)
+    plt.xlim(0, len(list_obj) + 1)
+
+    # Calculate the simple average of the data
+    y_mean = [np.mean(list_size)] * len(list_obj)
+    # Plot the average line
+    mean_line = plt.plot(list_obj, y_mean, label='Mean', linestyle='--')
+
+    plt.xticks(np.arange(0, len(list_obj) + 1, 5))
+    plt.ylabel('lossless JPG size [MB]', fontsize=18)
+    plt.title('Distribution of JPG size per object', fontsize=18)
+    plt.savefig(os.path.join(output_folder, 'plot_lossless_object.png'), bbox_inches='tight')
+    plt.clf()
+        # print(list_avg_img[obj]['size'])
+    # pass
+
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Variant to configure dataset")
     help_text="""
@@ -543,19 +639,26 @@ if __name__ == "__main__":
     Create building detection dataset 3 TRAIN images and n number of TEST images : BUILDING_DET_3_N
     Create building semantic segmentation evaluation dataset with all label images: SEMSEG_EVAL_FULL
     """
-    parser.add_argument('--variant', help=help_text, required=True)
+    parser.add_argument('--variant', help=help_text, required=False)
+    parser.add_argument('--check', help=help_text, required=False)
+    parser.add_argument('--lossless_jpeg', help=help_text, required=False)
     args = vars(parser.parse_args())
     print(args['variant'])
+    print(args['check'])
+    print(args['lossless_jpeg'])
 
-
-    if args['variant'] in OK_VARIANTA:
+    if args['variant'] in OK_VARIANTA or args['check'] or args['lossless_jpeg']:
     # if True:
         file = open('files.txt', 'r')
         for line in file.readlines():
             exec(line)
         list_img = read_csv_file()
 
-        #check_images_object(list_img, create_day_missing=True, create_night_missing=True)
+        if bool(args['check']):
+            check_images_object(list_img, create_day_missing=True, create_night_missing=True)
+
+        if bool(args['lossless_jpeg']):
+            do_lossless_JPG(list_img)
 
         if args['variant'] == 'STANDARD':
             create_img_sets(list_img=list_img, variant='Dataset STANDARD', verbose=False)
