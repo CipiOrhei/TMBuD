@@ -29,7 +29,7 @@ STANDARD - creates all 3 dataset of labels, edges and images\
 BUILDING_DET_3 - creates a dataset of images where 3 images of each building are used for learning and at least 2 image for testing. The files are renamed to be similar tu ZuBuD dataset \
 BUILDING_DET_3_NIGHT - creates a dataset of images where 3 images of each building are used for learning and at least 2 image day + 2 images night for testing. The files are renamed to be similar tu ZuBuD dataset \
 BUILDING_DET_3_N - creates a dataset of images where 3 images of each building are used for learning and all the rest of images for testing. The files are renamed to be similar tu ZuBuD dataset \
-SEMSEG_EVAL_FULL - creates a dataset of images with labeled ground truth\
+SEMSEG_EVAL_FULL - creates a dataset of images with labeled ground truth into TRAIN (250 images) and TEST (50 images)\
 
 Variants BUILDING_DET_3, BUILDING_DET_3_NIGHT, BUILDING_DET_3_N are still under development, so the number of images will keep increasing and mai change between TRAIN and TEST. 
 

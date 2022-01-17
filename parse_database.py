@@ -381,7 +381,7 @@ def create_label_sets(list_img, variant, verbose=False):
 
 def create_label_sets_full_eval(list_img, verbose=False):
     # delete existing folder
-    files = glob.glob(os.path.join(OUTPUT_FOLDER, 'label'))
+    files = glob.glob(os.path.join(OUTPUT_FOLDER, 'SEMSEG_EVAL_FULL', 'label_full'))
     print('OLD LABEL FOLDER IS DELETED')
 
     for f in files:
@@ -389,8 +389,8 @@ def create_label_sets_full_eval(list_img, verbose=False):
 
     for el in list_img:
         if el['GT labels'] != 'None':
-            output_folder = os.path.join(OUTPUT_FOLDER, 'label_full', 'png')
-            output_folder_classes = os.path.join(OUTPUT_FOLDER, 'label_full', 'classes')
+            output_folder = os.path.join(OUTPUT_FOLDER, 'SEMSEG_EVAL_FULL', 'label_full', el['SEMSEG_EVAL_FULL'], 'png')
+            output_folder_classes = os.path.join(OUTPUT_FOLDER, 'SEMSEG_EVAL_FULL', 'label_full', el['SEMSEG_EVAL_FULL'], 'classes')
 
             input_file = os.path.join(DATASET_LOCATION, INPUT_LABEL_FOLDER, el['Picture Name'] + '.png')
             output_file = os.path.join(output_folder, el['Picture Name'] + '.' + EXTENSION)
@@ -416,8 +416,10 @@ def create_label_sets_full_eval(list_img, verbose=False):
             cv2.imwrite(output_file_classes, img_final_classes)
 
     # check files.
-    print("LABEL DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'label_full', 'png')))
-    print("LABEL DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'label_full', 'png'))))
+    print("IMG TRAIN LABEL DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'SEMSEG_EVAL_FULL', 'label_full', 'TRAIN', 'png')))
+    print("IMG TRAIN LABEL DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'SEMSEG_EVAL_FULL', 'label_full', 'TRAIN', 'png'))))
+    print("IMG TEST LABEL DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'SEMSEG_EVAL_FULL', 'label_full', 'TEST', 'png')))
+    print("IMG TEST LABEL DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'SEMSEG_EVAL_FULL', 'label_full', 'TEST', 'png'))))
 
 
 def create_img_sets(list_img, variant, verbose=False):
@@ -457,15 +459,15 @@ def create_img_sets(list_img, variant, verbose=False):
 
 def create_img_sets_label_full(list_img, verbose=False):
     # delete existing folder
-    files = glob.glob(os.path.join(OUTPUT_FOLDER, 'img'))
+    files = glob.glob(os.path.join(OUTPUT_FOLDER, 'SEMSEG_EVAL_FULL', 'img_label_full'))
     print('OLD IMG FOLDER IS DELETED')
 
     for f in files:
         shutil.rmtree(f, ignore_errors=True)
 
     for el in list_img:
-        if el['GT labels'] != 'None':
-            output_folder = os.path.join(OUTPUT_FOLDER, 'img_label_full', 'png')
+        if el['SEMSEG_EVAL_FULL'] != 'None':
+            output_folder = os.path.join(OUTPUT_FOLDER, 'SEMSEG_EVAL_FULL', 'img_label_full', el['SEMSEG_EVAL_FULL'], 'png')
 
             input_file = os.path.join(DATASET_LOCATION, INPUT_IMG_FOLDER, el['Picture Name'] + '.png')
             output_file = os.path.join(output_folder, el['Picture Name'] + '.png')
@@ -483,8 +485,10 @@ def create_img_sets_label_full(list_img, verbose=False):
             pass
 
     # check files.
-    print("IMG DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'img_label_full', 'png')))
-    print("IMG DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'img_label_full', 'png'))))
+    print("IMG TRAIN DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'SEMSEG_EVAL_FULL', 'img_label_full', 'TRAIN', 'png')))
+    print("IMG TRAIN DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'SEMSEG_EVAL_FULL', 'img_label_full', 'TRAIN', 'png'))))
+    print("IMG TEST DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, 'SEMSEG_EVAL_FULL', 'img_label_full', 'TEST', 'png')))
+    print("IMG TEST DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'SEMSEG_EVAL_FULL', 'img_label_full', 'TEST', 'png'))))
 
 
 
@@ -604,7 +608,7 @@ def do_lossless_JPG(list_img):
 
     plt.ylabel('Number of images', fontsize=18)
     plt.title('Distribution of images per object', fontsize=18)
-    plt.savefig(os.path.join(output_folder, 'plot_imgs_object.png'), bbox_inches='tight')
+    plt.savefig(os.path.join(output_folder, 'plot_imgs_object.png'), bbox_inches='tight', dpi=1200)
     plt.clf()
 
     fig = plt.gcf()
@@ -623,7 +627,7 @@ def do_lossless_JPG(list_img):
     plt.xticks(np.arange(0, len(list_obj) + 1, 5))
     plt.ylabel('lossless JPG size [MB]', fontsize=18)
     plt.title('Distribution of JPG size per object', fontsize=18)
-    plt.savefig(os.path.join(output_folder, 'plot_lossless_object.png'), bbox_inches='tight')
+    plt.savefig(os.path.join(output_folder, 'plot_lossless_object.png'), bbox_inches='tight', dpi=1200)
     plt.clf()
         # print(list_avg_img[obj]['size'])
     # pass
