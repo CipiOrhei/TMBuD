@@ -15,7 +15,6 @@ EXTENSION = 'png'
 
 OK_VARIANTA = ['STANDARD', 'BUILDING_DET_3', 'BUILDING_DET_3_NIGHT', 'BUILDING_DET_3_N', 'SEMSEG_EVAL_FULL']
 
-
 BACKGROUND =    (0,     0,      0)
 SKY =           (255,   0,      0)
 VEGETATION =    (0,     255,    0)
@@ -35,6 +34,7 @@ def read_csv_file():
     # eliminate new line character
     fields[-1] = fields[-1].split('\n')[0]
     list_images = list()
+    max_distance = 0
 
     for line in file.readlines():
         data = line.split(',')
@@ -49,6 +49,9 @@ def read_csv_file():
 
         list_images.append(new_obj)
 
+    file.close()
+
+    print('MAX distance', max_distance)
     return list_images
 
 
@@ -64,7 +67,8 @@ def check_images_object(list_img, create_day_missing=False, create_night_missing
 
     for img in list_img:
         if img['Picture Name'][:3] not in check_dict.keys():
-            check_dict[img['Picture Name'][:3]] = {'DAY': 0, 'NIGHT': 0, 'LABELS': 0, 'EDGE': 0, 'TRAIN_Dataset 3_2': 0,  'TEST_Dataset 3_2': 0}
+            check_dict[img['Picture Name'][:3]] = {'DAY': 0, 'NIGHT': 0, 'LABELS': 0, 'EDGE': 0, 'TRAIN_Dataset 3_2': 0,  'TEST_Dataset 3_2': 0,
+                                                   'TRAIN_Dataset 3_5_NIGHT': 0,  'TEST_Dataset 3_5_NIGHT': 0}
 
         if img['GT salient edges'] == 'Done':
             if not os.path.exists(os.path.join(DATASET_LOCATION, INPUT_EDGE_FOLDER , img['Picture Name'] + '.png')):
@@ -88,6 +92,9 @@ def check_images_object(list_img, create_day_missing=False, create_night_missing
 
         if img['Dataset 3_2'] != 'None':
             check_dict[img['Picture Name'][:3]][img['Dataset 3_2'] + '_Dataset 3_2'] += 1
+
+        if img['Dataset 3_5_NIGHT'] != 'None':
+            check_dict[img['Picture Name'][:3]][img['Dataset 3_5_NIGHT'] + '_Dataset 3_5_NIGHT'] += 1
 
     print('Mismarked edge images: ', list_missing_edge)
     print('Mismarked label images: ', list_missing_label)
@@ -134,6 +141,13 @@ def check_images_object(list_img, create_day_missing=False, create_night_missing
     list_missing = []
     for key in check_dict.keys():
         if check_dict[key]['TRAIN_Dataset 3_2'] < 3 or check_dict[key]['TEST_Dataset 3_2'] < 2:
+            list_missing.append(key)
+    print('NOK number of images: ', list_missing)
+
+    print('Checking missing Dataset 3_5 images')
+    list_missing = []
+    for key in check_dict.keys():
+        if check_dict[key]['TRAIN_Dataset 3_5_NIGHT'] < 3 or check_dict[key]['TEST_Dataset 3_5_NIGHT'] < 5:
             list_missing.append(key)
     print('NOK number of images: ', list_missing)
 
@@ -491,7 +505,6 @@ def create_img_sets_label_full(list_img, verbose=False):
     print("IMG TEST DATASET SIZE: ", len(os.listdir(os.path.join(OUTPUT_FOLDER, 'SEMSEG_EVAL_FULL', 'img_label_full', 'TEST', 'png'))))
 
 
-
 def create_img_detection_dataset(list_img, variant,  folder_out, verbose=False):
     # delete existing folder
     files = glob.glob(os.path.join(OUTPUT_FOLDER, folder_out))
@@ -500,6 +513,7 @@ def create_img_detection_dataset(list_img, variant,  folder_out, verbose=False):
     for f in files:
         shutil.rmtree(f, ignore_errors=True)
 
+    text_landmark = "ID,Building Name\n"
     new_obj_nr = 0
     new_obj_view = 0
     last_obj=0
@@ -509,6 +523,7 @@ def create_img_detection_dataset(list_img, variant,  folder_out, verbose=False):
                 last_obj = object['Object class']
                 new_obj_nr += 1
                 new_obj_view = 1
+                text_landmark += "{},{}\n".format(new_obj_nr, object['Building Name'])
 
             object['Object class'] = new_obj_nr
             if object[variant] != 'TEST':
@@ -516,7 +531,9 @@ def create_img_detection_dataset(list_img, variant,  folder_out, verbose=False):
                 new_obj_view += 1
 
     text_gt = "TEST	TRAIN\n"
-    # text_gt = ""
+    text_coordonates_train = 'Frame,Building Name,Coordinates Landmark,Coordinates image\n'
+    text_coordonates_test = 'Frame,Building Name,Coordinates Landmark,Coordinates image\n'
+
     idx = 1
 
     for el in list_img:
@@ -526,10 +543,13 @@ def create_img_detection_dataset(list_img, variant,  folder_out, verbose=False):
 
             if el[variant] == 'TRAIN':
                 output_file = os.path.join(output_folder, "object{0:04d}_view{1:02d}.png".format(el['Object class'], el['Object view']))
+                text_coordonates_train += "object{0:04d}_view{1:02d}, {2}, {3}, {4}\n".format(el['Object class'], el['Object view'], el['Building Name'], el['Coordinates Landmark'], el['Coordinates image'])
             else:
                 output_file = os.path.join(output_folder, "qimg{0:04d}.png".format(idx))
                 text_gt += "{0:03d}\t{1:03d}\n".format(idx, el['Object class'])
+                text_coordonates_test += "qimg{0:04d}, {1}, {2}, {3}\n".format(idx, el['Building Name'], el['Coordinates Landmark'], el['Coordinates image'])
                 idx += 1
+
 
             if verbose:
                 img = cv2.imread(input_file)
@@ -543,8 +563,17 @@ def create_img_detection_dataset(list_img, variant,  folder_out, verbose=False):
         else:
             pass
 
+    file_out = open(os.path.join(OUTPUT_FOLDER, folder_out, 'landmarks.csv'), 'w')
+    file_out.write(text_landmark)
+    file_out.close()
     file_out = open(os.path.join(OUTPUT_FOLDER, folder_out, 'TMBuD_groundtruth.txt'), 'w')
     file_out.write(text_gt)
+    file_out.close()
+    file_out = open(os.path.join(OUTPUT_FOLDER, folder_out, 'train_data.csv'), 'w')
+    file_out.write(text_coordonates_train)
+    file_out.close()
+    file_out = open(os.path.join(OUTPUT_FOLDER, folder_out, 'test_data.csv'), 'w')
+    file_out.write(text_coordonates_test)
     file_out.close()
     # check files.
     print("IMG TRAIN DATASET: ", os.listdir(os.path.join(OUTPUT_FOLDER, folder_out, 'TRAIN')))
@@ -577,7 +606,6 @@ def do_lossless_JPG(list_img):
 
     for obj in list_avg_img.keys():
         new_img = (list_avg_img[obj]['values'] / list_avg_img[obj]['count'])
-
 
         if not os.path.exists(os.path.join(output_folder)):
             os.makedirs(os.path.join(output_folder))
@@ -614,8 +642,6 @@ def do_lossless_JPG(list_img):
     fig = plt.gcf()
     fig.set_size_inches(w=15, h=10)
     plt.plot(list_obj, list_size)
-    # plt.plot(list_obj, list_val)
-    # plt.xlim([0, 256])
     plt.xlabel('Landmark', fontsize=18)
     plt.xlim(0, len(list_obj) + 1)
 
@@ -629,8 +655,7 @@ def do_lossless_JPG(list_img):
     plt.title('Distribution of JPG size per object', fontsize=18)
     plt.savefig(os.path.join(output_folder, 'plot_lossless_object.png'), bbox_inches='tight', dpi=1200)
     plt.clf()
-        # print(list_avg_img[obj]['size'])
-    # pass
+
 
 
 
@@ -652,7 +677,6 @@ if __name__ == "__main__":
     print(args['lossless_jpeg'])
 
     if args['variant'] in OK_VARIANTA or args['check'] or args['lossless_jpeg']:
-    # if True:
         file = open('files.txt', 'r')
         for line in file.readlines():
             exec(line)
@@ -671,8 +695,7 @@ if __name__ == "__main__":
         elif args['variant'] == 'BUILDING_DET_3':
             create_img_detection_dataset(list_img=list_img, variant='Dataset 3_2', folder_out='v3_2', verbose=False)
         elif args['variant'] == 'BUILDING_DET_3_NIGHT':
-            create_img_detection_dataset(list_img=list_img, variant='Dataset 3_2_NIGHT', folder_out='v3_2_night', verbose=False)
-            #TODO fix numbering of objects
+            create_img_detection_dataset(list_img=list_img, variant='Dataset 3_5_NIGHT', folder_out='v3_2_night', verbose=False)
         elif args['variant'] == 'BUILDING_DET_3_N':
             create_img_detection_dataset(list_img=list_img, variant='Dataset 3_N', folder_out='v3_n', verbose=False)
         elif args['variant'] == 'SEMSEG_EVAL_FULL':
