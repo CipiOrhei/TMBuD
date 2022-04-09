@@ -9,6 +9,9 @@ from numba import jit
 import argparse
 import matplotlib.pyplot as plt
 import sys
+import piq
+import torch
+import torchvision.transforms as transforms
 
 # edit here the new locations of the raw data and where to add the information
 EXTENSION = 'png'
@@ -657,6 +660,58 @@ def do_lossless_JPG(list_img):
     plt.clf()
 
 
+def do_iqa(list_img):
+    list_avg_img = dict()
+    output_folder = os.path.join(OUTPUT_FOLDER, 'iqa')
+
+    # delete existing folder
+    files = glob.glob(os.path.join(OUTPUT_FOLDER, output_folder))
+    print('OLD IMG FOLDER IS DELETED')
+
+    if not os.path.exists(os.path.join(output_folder)):
+        os.makedirs(os.path.join(output_folder))
+
+    for f in files:
+        shutil.rmtree(f, ignore_errors=True)
+
+    for img in list_img:
+        input_file = os.path.join(DATASET_LOCATION, INPUT_IMG_FOLDER, img['Picture Name'] + '.png')
+        tmp_img = cv2.imread(input_file)
+
+        # Define a transform to convert the image to tensor
+        transform = transforms.ToTensor()
+
+        # Convert the image to PyTorch tensor
+        tensor = transform(tmp_img)
+        tensor = torch.unsqueeze(tensor, dim=0)
+
+        list_avg_img[img['Picture Name']] = min(piq.brisque(tensor).item()/100,1.0)
+
+    # print(list_avg_img)
+    list_obj = list(list_avg_img.keys())
+    list_val = list(list_avg_img.values())
+
+    # print(list_obj)
+    # print(list_val)
+    fig = plt.gcf()
+    fig.set_size_inches(w=15, h=10)
+    # plt.plot(list_obj, list_size)
+    plt.plot(list_obj, list_val, 'o')
+    # plt.xlim([0, 256])
+    # plt.xlabel('Landmark', fontsize=18)
+    plt.xlim(0, len(list_obj) + 1)
+    plt.xticks(np.arange(0, len(list_obj) + 1, 100))
+
+    # Calculate the simple average of the data
+    y_mean = [np.mean(list_val)] * len(list_obj)
+    # Plot the average line
+    mean_line = plt.plot(list_obj, y_mean, label='Mean', linestyle='--')
+    plt.yticks(np.arange(0, 1.1, 0.2))
+
+    plt.ylabel('BRISQUE', fontsize=18)
+    plt.title('Image', fontsize=18)
+    plt.savefig(os.path.join(output_folder, 'plot_brisque_img.png'), bbox_inches='tight', dpi=1200)
+    plt.clf()
 
 
 if __name__ == "__main__":
@@ -671,12 +726,14 @@ if __name__ == "__main__":
     parser.add_argument('--variant', help=help_text, required=False)
     parser.add_argument('--check', help=help_text, required=False)
     parser.add_argument('--lossless_jpeg', help=help_text, required=False)
+    parser.add_argument('--iqa_check', help=help_text, required=False)
     args = vars(parser.parse_args())
-    print(args['variant'])
-    print(args['check'])
-    print(args['lossless_jpeg'])
+    # print(args['variant'])
+    # print(args['check'])
+    # print(args['lossless_jpeg'])
+    # print(args['iqa_check'])
 
-    if args['variant'] in OK_VARIANTA or args['check'] or args['lossless_jpeg']:
+    if args['variant'] in OK_VARIANTA or args['check'] or args['lossless_jpeg'] or args['iqa_check']:
         file = open('files.txt', 'r')
         for line in file.readlines():
             exec(line)
@@ -687,6 +744,9 @@ if __name__ == "__main__":
 
         if bool(args['lossless_jpeg']):
             do_lossless_JPG(list_img)
+
+        if bool(args['iqa_check']):
+            do_iqa(list_img)
 
         if args['variant'] == 'STANDARD':
             create_img_sets(list_img=list_img, variant='Dataset STANDARD', verbose=False)
