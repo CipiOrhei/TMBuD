@@ -1,0 +1,27 @@
+#
+####### requirements.txt #######
+#
+###### Requirements without Version Specifiers ######
+#
+matplotlib
+numpy
+numba
+opencv-python
+piq
+pandas==1.1.5
+torch
+torchvision
+thinning_py3
+wheel
+theano
+###### Requirements with Version Specifiers ######
+#
+###### Refer to other requirements files ######
+#
+#
+###### A particular file ######
+#
+###### Additional Requirements without Version Specifiers ######
+#   Same as 1st section, just here to show that you can put things in any order.
+#
+setuptools~=46.4.0
