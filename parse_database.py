@@ -16,7 +16,7 @@ import torchvision.transforms as transforms
 # edit here the new locations of the raw data and where to add the information
 EXTENSION = 'png'
 
-OK_VARIANTA = ['STANDARD', 'BUILDING_DET_3', 'BUILDING_DET_3_NIGHT', 'BUILDING_DET_3_N', 'SEMSEG_EVAL_FULL']
+OK_VARIANTA = ['STANDARD', 'BUILDING_DET_3', 'BUILDING_DET_3_NIGHT', 'BUILDING_DET_3_N', 'SEMSEG_EVAL_FULL', 'SH_3_N']
 
 BACKGROUND =    (0,     0,      0)
 SKY =           (255,   0,      0)
@@ -761,3 +761,5 @@ if __name__ == "__main__":
         elif args['variant'] == 'SEMSEG_EVAL_FULL':
             create_img_sets_label_full(list_img=list_img, verbose=False)
             create_label_sets_full_eval(list_img=list_img, verbose=False)
+        elif args['variant'] == 'SH_3_N':
+            create_img_detection_dataset(list_img=list_img, variant='Dataset_SH_3_N', folder_out='sh_3_n', verbose=False)
